@@ -1,0 +1,278 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-jakarta: "Plus Jakarta Sans", sans-serif;
+  --font-inter: "Inter", sans-serif;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 5rem;
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  button,
+  a,
+  [role="button"] {
+    touch-action: manipulation;
+  }
+
+  input,
+  textarea,
+  select {
+    font-size: 16px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+  }
+
+  body {
+    /* clip (e não hidden): corta qualquer vazamento lateral sem criar
+       container de rolagem, então o position: sticky continua funcionando. */
+    overflow-x: clip;
+    @apply bg-white font-sans text-body antialiased;
+    font-feature-settings: "cv11", "ss01";
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-display tracking-tight text-ink;
+  }
+
+  ::selection {
+    background: #ddd6fe;
+    color: #0f172a;
+  }
+
+  :focus-visible {
+    outline: 2px solid #6d28d9;
+    outline-offset: 3px;
+    border-radius: 6px;
+  }
+}
+
+/* Reflexo de luz que segue o cursor nos botões principais (só mouse). */
+.btn-primary::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: radial-gradient(
+    110px circle at var(--mx, 50%) var(--my, 50%),
+    rgba(255, 255, 255, 0.26),
+    transparent 70%
+  );
+  opacity: 0;
+  transition: opacity 160ms ease-out;
+  pointer-events: none;
+}
+@media (hover: hover) and (pointer: fine) {
+  .btn-primary:hover::before {
+    opacity: 1;
+  }
+}
+
+/* Spotlight: halo roxo ultra-suave que acompanha o cursor (só mouse). */
+.spot {
+  position: relative;
+}
+.spot::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 200ms ease-out;
+  background: radial-gradient(
+    280px circle at var(--mx, 50%) var(--my, 50%),
+    rgba(109, 40, 217, 0.06),
+    transparent 70%
+  );
+}
+@media (hover: hover) and (pointer: fine) {
+  .spot:hover::before {
+    opacity: 1;
+  }
+}
+
+/* Brilho sutil que atravessa o selo de verificação a cada ciclo. */
+@keyframes badge-sweep {
+  0%, 55% { transform: translateX(-140%) skewX(-18deg); }
+  100% { transform: translateX(340%) skewX(-18deg); }
+}
+.badge-shine::after {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 35%;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.85),
+    transparent
+  );
+  animation: badge-sweep 4.2s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .badge-shine::after { animation: none; display: none; }
+}
+
+/* Spotlight em fundo escuro: ilumina o preenchimento e a borda do card. */
+.spot-dark {
+  position: relative;
+}
+.spot-dark::before,
+.spot-dark::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 220ms ease-out;
+}
+.spot-dark::before {
+  background: radial-gradient(
+    260px circle at var(--mx, 50%) var(--my, 50%),
+    rgba(139, 92, 246, 0.2),
+    rgba(22, 163, 74, 0.07) 55%,
+    transparent 75%
+  );
+}
+.spot-dark::after {
+  padding: 1px;
+  background: radial-gradient(
+    200px circle at var(--mx, 50%) var(--my, 50%),
+    rgba(167, 139, 250, 0.9),
+    rgba(74, 222, 128, 0.5) 50%,
+    transparent 75%
+  );
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+}
+@media (hover: hover) and (pointer: fine) {
+  .spot-dark:hover::before,
+  .spot-dark:hover::after {
+    opacity: 1;
+  }
+}
+.spot-dark[data-lit="1"]::before,
+.spot-dark[data-lit="1"]::after {
+  opacity: 1;
+}
+
+/* Abertura da Hero: entrada em cascata e sublinhado que se desenha. */
+@keyframes hero-rise {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes hero-draw {
+  to { stroke-dashoffset: 0; }
+}
+.hero-rise {
+  animation: hero-rise 420ms cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+.hero-underline {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: hero-draw 700ms cubic-bezier(0.23, 1, 0.32, 1) 650ms forwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-rise { animation: none; }
+  .hero-underline { animation: none; stroke-dashoffset: 0; }
+}
+
+/* Simulador: entradas rápidas, ease-out forte, abaixo de 300ms. */
+@keyframes sim-in-fwd {
+  from { opacity: 0; transform: translateX(14px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes sim-in-back {
+  from { opacity: 0; transform: translateX(-14px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes sim-overlay {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes sim-panel {
+  from { opacity: 0; transform: translateY(12px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+.sim-fwd { animation: sim-in-fwd 220ms cubic-bezier(0.23, 1, 0.32, 1) both; }
+.sim-back { animation: sim-in-back 220ms cubic-bezier(0.23, 1, 0.32, 1) both; }
+.sim-overlay { animation: sim-overlay 160ms ease-out both; }
+.sim-panel { animation: sim-panel 220ms cubic-bezier(0.23, 1, 0.32, 1) both; }
+@media (prefers-reduced-motion: reduce) {
+  .sim-fwd, .sim-back, .sim-panel { animation: sim-overlay 120ms ease-out both; }
+}
+
+/* Slider da Hero: trilho preenchido em roxo até o valor atual (--pct). */
+.range-brand {
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+  width: 100%;
+  height: 44px;
+  background: transparent;
+  cursor: pointer;
+}
+.range-brand::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(to right, #6d28d9 var(--pct), #e2e8f0 var(--pct));
+}
+.range-brand::-moz-range-track {
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(to right, #6d28d9 var(--pct), #e2e8f0 var(--pct));
+}
+.range-brand::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 26px;
+  height: 26px;
+  margin-top: -10px;
+  border-radius: 999px;
+  background: #fff;
+  border: 2px solid #6d28d9;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.25);
+}
+.range-brand::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: #fff;
+  border: 2px solid #6d28d9;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.25);
+}
+
+@layer components {
+  .btn-primary {
+    @apply inline-flex min-h-[48px] items-center justify-center gap-2 rounded-lg bg-action px-6 text-[15px] font-semibold text-white shadow-cta transition-[background-color,transform] duration-150 hover:bg-action-hover active:scale-[0.97];
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+  }
+
+  .btn-ghost {
+    @apply inline-flex min-h-[48px] items-center justify-center gap-2 rounded-lg px-3 text-[15px] font-semibold text-ink transition-colors duration-150 hover:text-brand;
+  }
+
+  .wrap {
+    @apply mx-auto w-full max-w-[1200px] px-5 sm:px-8;
+  }
+}
