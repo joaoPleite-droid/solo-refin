@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
-import { allErrors, buildCrmPayload, coerceForm } from "@/lib/simular";
+import { allErrors, coerceForm } from "@/lib/simular";
+import { buildLeadWebhookPayload } from "@/lib/crmWebhook";
 
 export const runtime = "nodejs";
-
-const SOURCE = "LP Refinanciamento Veículo - Solopromotora";
 
 const TRACKING_KEYS = [
   "utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term",
@@ -39,18 +38,12 @@ export async function POST(req: Request) {
   // Protocolo com formato inválido é descartado.
   if (!/^SOLO-\d{4}-[A-Z0-9]{3,8}$/.test(tracking.protocolo)) tracking.protocolo = "";
 
-  const payload = {
-    timestamp: new Date().toISOString(),
-    source: SOURCE,
-    protocol: tracking.protocolo || null,
-    ...buildCrmPayload(form),
-    tracking,
-    // Úteis para a API de Conversões da Meta (correspondência do evento).
-    request: {
-      ip: req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null,
-      userAgent: req.headers.get("user-agent"),
-    },
+  const meta = {
+    ip: req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null,
+    userAgent: req.headers.get("user-agent"),
   };
+
+  const payload = buildLeadWebhookPayload(form, tracking, meta);
 
   const webhook = process.env.CRM_WEBHOOK_URL;
 
@@ -60,10 +53,17 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true, forwarded: false });
   }
 
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  // Token opcional do Lead Webhook (gerado em Configurações → Webhooks no CRM).
+  // Sem ele configurado, o CRM aceita a requisição do mesmo jeito.
+  if (process.env.CRM_WEBHOOK_TOKEN) {
+    headers["Authorization"] = `Bearer ${process.env.CRM_WEBHOOK_TOKEN}`;
+  }
+
   try {
     const res = await fetch(webhook, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers,
       body: JSON.stringify(payload),
       signal: AbortSignal.timeout(8000),
     });

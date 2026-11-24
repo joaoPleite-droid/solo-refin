@@ -36,13 +36,20 @@ npm start
 
 | Variável | Onde | Descrição |
 | --- | --- | --- |
-| `CRM_WEBHOOK_URL` | servidor | Webhook do CRM que recebe o lead (POST, JSON). Sem ela o site funciona e o lead não é encaminhado. **Não** use o prefixo `NEXT_PUBLIC_`: isso exporia a URL no navegador. |
+| `CRM_WEBHOOK_URL` | servidor | Lead Webhook do CRM Whats Profissional (Configurações → Webhooks → Lead Webhook). Sem ela o site funciona e o lead não é encaminhado. **Não** use o prefixo `NEXT_PUBLIC_`: isso exporia a URL no navegador. |
+| `CRM_WEBHOOK_TOKEN` | servidor | Token do Lead Webhook (Configurações → Webhooks → Autenticação do Lead Webhook → "Gerar token"). Enviado como `Authorization: Bearer`. Opcional: sem ele, o CRM aceita a requisição do mesmo jeito enquanto "Exigir token nas requisições" estiver desligado lá. **Não** use o prefixo `NEXT_PUBLIC_`. |
 | `NEXT_PUBLIC_META_PIXEL_ID` | navegador | ID numérico do Meta Pixel. Vazio = o Pixel não é carregado. |
+
+`app/api/lead/route.ts` revalida o formulário e monta o payload no formato que o
+Lead Webhook espera (`lib/crmWebhook.ts`): nome, telefone, email, documento (CPF),
+origem, UTMs, IP/user-agent e um campo `necessidade` com todo o resto (veículo,
+crédito, profissão, endereço) formatado em texto — o CRM não tem campos próprios
+para isso, então vira nota no lead.
 
 ### Deploy na Vercel
 
 1. Suba o repositório no GitHub e importe o projeto na Vercel (framework: Next.js, sem configuração extra).
-2. Em **Settings → Environment Variables**, cadastre `CRM_WEBHOOK_URL` e `NEXT_PUBLIC_META_PIXEL_ID`.
+2. Em **Settings → Environment Variables**, cadastre `CRM_WEBHOOK_URL`, `CRM_WEBHOOK_TOKEN` e `NEXT_PUBLIC_META_PIXEL_ID`.
 3. Faça o deploy. Variáveis `NEXT_PUBLIC_*` só entram no build seguinte à alteração.
 
 ## Rastreamento (Meta Ads)
