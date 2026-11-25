@@ -18,50 +18,52 @@ const ufLabel = (uf: string) => UFS.find(([sigla]) => sigla === uf)?.[1] ?? uf;
  * esse contexto vai formatado dentro de "necessidade", que o CRM grava como
  * nota no lead — assim quem for ligar já vê tudo de uma vez.
  *
- * O campo "Necessidade" do CRM não preserva quebra de linha na exibição
- * (tudo vira um parágrafo só), então aqui usamos " • " para separar cada
- * seção — assim o texto continua legível mesmo exibido em uma linha única.
+ * Formato pedido pelo cliente: título + seções com cabeçalho e itens em
+ * lista (um por linha, com "* "). Se o campo "Necessidade" do CRM não
+ * preservar quebra de linha na exibição, isso ainda aparece colapsado —
+ * nesse caso o ajuste tem que ser feito no lado do CRM, não aqui.
  */
 function buildNecessidade(form: FormState, protocolo: string): string {
-  const sections = [
-    `Simulação de refinanciamento de veículo${protocolo ? " — " + protocolo : ""}`,
-    [
-      "Veículo",
-      `tipo ${form.vehicleType || "—"}`,
-      `placa ${form.plate || "—"}`,
-      `câmbio ${form.transmission || "—"}`,
-      `no nome do solicitante: ${form.owner || "—"}`,
-      `UF ${form.uf ? ufLabel(form.uf) : "—"}`,
-      `restrição SPC/Serasa: ${form.spc || "—"}`,
-    ].join(", "),
-    [
-      "Crédito desejado",
-      `${formatBRL(form.amountCents / 100)}`,
-      `em ${form.term ? `${form.term} meses` : "—"}`,
-    ].join(", "),
-    [
-      "Profissional",
-      `${form.occupation || "—"}`,
-      `em ${form.employer || "—"}`,
-      `há ${form.tenure || "—"}`,
-      `renda ${formatBRL(form.incomeCents / 100)}`,
-    ].join(", "),
-    [
-      "Endereço",
-      `${form.street || "—"}, ${form.number || "s/n"}${form.complement ? " - " + form.complement : ""}`,
-      `${form.district || "—"}`,
-      `${form.city || "—"}/${form.addrUf ? ufLabel(form.addrUf) : "—"}`,
-      `CEP ${form.cep || "—"}`,
-      `moradia ${form.housing || "—"}`,
-    ].join(", "),
-    [
-      "Pessoal",
-      `nascido em ${form.birth || "—"} em ${form.birthCity || "—"}/${form.birthUf ? ufLabel(form.birthUf) : "—"}`,
-      `mãe: ${form.mother || "—"}`,
-    ].join(", "),
-    `Aceitou a Política de Privacidade: ${form.consent ? "Sim" : "Não"}`,
+  const lines = [
+    `Código: ${protocolo || "—"}`,
+    "",
+    "Dados do veículo",
+    `* Tipo: ${form.vehicleType || "—"}`,
+    `* Placa: ${form.plate || "—"}`,
+    `* Câmbio: ${form.transmission || "—"}`,
+    `* Veículo no nome do solicitante: ${form.owner || "—"}`,
+    `* UF: ${form.uf ? ufLabel(form.uf) : "—"}`,
+    `* Restrição SPC/Serasa: ${form.spc || "—"}`,
+    "",
+    "Crédito desejado",
+    `* Valor solicitado: ${formatBRL(form.amountCents / 100)}`,
+    `* Prazo: ${form.term ? `${form.term} meses` : "—"}`,
+    "",
+    "Dados profissionais",
+    `* Profissão: ${form.occupation || "—"}`,
+    `* Empresa: ${form.employer || "—"}`,
+    `* Tempo de trabalho: ${form.tenure || "—"}`,
+    `* Renda mensal: ${formatBRL(form.incomeCents / 100)}`,
+    "",
+    "Endereço",
+    `* Logradouro: ${form.street || "—"}`,
+    `* Número: ${form.number || "s/n"}${form.complement ? ` (${form.complement})` : ""}`,
+    `* Bairro: ${form.district || "—"}`,
+    `* Cidade: ${form.city || "—"}`,
+    `* Estado: ${form.addrUf ? ufLabel(form.addrUf) : "—"}`,
+    `* CEP: ${form.cep || "—"}`,
+    `* Tipo de moradia: ${form.housing || "—"}`,
+    "",
+    "Dados pessoais",
+    `* Data de nascimento: ${form.birth || "—"}`,
+    `* Cidade de nascimento: ${form.birthCity || "—"}`,
+    `* Estado de nascimento: ${form.birthUf ? ufLabel(form.birthUf) : "—"}`,
+    `* Nome da mãe: ${form.mother || "—"}`,
+    "",
+    "Política de Privacidade",
+    `- Aceitou a Política de Privacidade: ${form.consent ? "Sim" : "Não"}`,
   ];
-  return sections.join(" • ");
+  return lines.join("\n");
 }
 
 export function buildLeadWebhookPayload(
