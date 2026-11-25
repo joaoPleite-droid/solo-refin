@@ -18,52 +18,63 @@ const ufLabel = (uf: string) => UFS.find(([sigla]) => sigla === uf)?.[1] ?? uf;
  * esse contexto vai formatado dentro de "necessidade", que o CRM grava como
  * nota no lead — assim quem for ligar já vê tudo de uma vez.
  *
- * Formato pedido pelo cliente: título + seções com cabeçalho e itens em
- * lista (um por linha, com "* "). Se o campo "Necessidade" do CRM não
- * preservar quebra de linha na exibição, isso ainda aparece colapsado —
- * nesse caso o ajuste tem que ser feito no lado do CRM, não aqui.
+ * O campo "Necessidade" do CRM (crm.whatsprofissional.com) é um sistema de
+ * terceiros cujo front-end exibe esse campo com `white-space: normal`,
+ * então qualquer quebra de linha enviada é colapsada visualmente (isso foi
+ * confirmado inspecionando o DOM de um lead real: o texto chega intacto
+ * com \n, mas é renderizado em um parágrafo só). Não temos acesso ao
+ * código desse sistema para corrigir a causa raiz lá, então aqui geramos
+ * o texto já pensado para ficar legível em uma única linha: emojis por
+ * seção, títulos em maiúsculas e " | " como separador único.
  */
+const ownerLabel = (v: string) => {
+  if (v === "Sim") return "Em nome do solicitante";
+  if (v === "Não") return "Em nome de terceiro";
+  return v || "—";
+};
+
+const spcLabel = (v: string) => {
+  if (v === "Não possuo") return "Sem restrições";
+  if (v === "Sim, possuo") return "Possui restrições";
+  return v || "—";
+};
+
 function buildNecessidade(form: FormState, protocolo: string): string {
-  const lines = [
-    `Código: ${protocolo || "—"}`,
-    "",
-    "Dados do veículo",
-    `* Tipo: ${form.vehicleType || "—"}`,
-    `* Placa: ${form.plate || "—"}`,
-    `* Câmbio: ${form.transmission || "—"}`,
-    `* Veículo no nome do solicitante: ${form.owner || "—"}`,
-    `* UF: ${form.uf ? ufLabel(form.uf) : "—"}`,
-    `* Restrição SPC/Serasa: ${form.spc || "—"}`,
-    "",
-    "Crédito desejado",
-    `* Valor solicitado: ${formatBRL(form.amountCents / 100)}`,
-    `* Prazo: ${form.term ? `${form.term} meses` : "—"}`,
-    "",
-    "Dados profissionais",
-    `* Profissão: ${form.occupation || "—"}`,
-    `* Empresa: ${form.employer || "—"}`,
-    `* Tempo de trabalho: ${form.tenure || "—"}`,
-    `* Renda mensal: ${formatBRL(form.incomeCents / 100)}`,
-    "",
-    "Endereço",
-    `* Logradouro: ${form.street || "—"}`,
-    `* Número: ${form.number || "s/n"}${form.complement ? ` (${form.complement})` : ""}`,
-    `* Bairro: ${form.district || "—"}`,
-    `* Cidade: ${form.city || "—"}`,
-    `* Estado: ${form.addrUf ? ufLabel(form.addrUf) : "—"}`,
-    `* CEP: ${form.cep || "—"}`,
-    `* Tipo de moradia: ${form.housing || "—"}`,
-    "",
-    "Dados pessoais",
-    `* Data de nascimento: ${form.birth || "—"}`,
-    `* Cidade de nascimento: ${form.birthCity || "—"}`,
-    `* Estado de nascimento: ${form.birthUf ? ufLabel(form.birthUf) : "—"}`,
-    `* Nome da mãe: ${form.mother || "—"}`,
-    "",
-    "Política de Privacidade",
-    `- Aceitou a Política de Privacidade: ${form.consent ? "Sim" : "Não"}`,
+  const parts = [
+    `📋 SIMULAÇÃO DE REFINANCIAMENTO | ${protocolo || "—"}`,
+    [
+      `🚗 VEÍCULO: ${form.vehicleType || "—"}`,
+      `Placa: ${form.plate || "—"}`,
+      `Câmbio: ${form.transmission || "—"}`,
+      `Propriedade: ${ownerLabel(form.owner)}`,
+      `UF: ${form.uf ? ufLabel(form.uf) : "—"}`,
+      `SPC/Serasa: ${spcLabel(form.spc)}`,
+    ].join(" | "),
+    [
+      `💰 CRÉDITO: Valor solicitado: ${formatBRL(form.amountCents / 100)}`,
+      `Prazo: ${form.term ? `${form.term} meses` : "—"}`,
+    ].join(" | "),
+    [
+      `💼 PROFISSIONAL: Regime: ${form.occupation || "—"}`,
+      `Empresa: ${form.employer || "—"}`,
+      `Tempo de trabalho: ${form.tenure || "—"}`,
+      `Renda mensal: ${formatBRL(form.incomeCents / 100)}`,
+    ].join(" | "),
+    [
+      `📍 ENDEREÇO: ${form.street || "—"}, ${form.number || "s/n"}${form.complement ? ` (${form.complement})` : ""}`,
+      form.district || "—",
+      `${form.city || "—"}/${form.addrUf ? ufLabel(form.addrUf) : "—"}`,
+      `CEP: ${form.cep || "—"}`,
+      `Moradia: ${form.housing || "—"}`,
+    ].join(" | "),
+    [
+      `👤 DADOS PESSOAIS: Nascimento: ${form.birth || "—"}`,
+      `Naturalidade: ${form.birthCity || "—"}/${form.birthUf ? ufLabel(form.birthUf) : "—"}`,
+      `Nome da mãe: ${form.mother || "—"}`,
+    ].join(" | "),
+    `🔒 PRIVACIDADE: Política de Privacidade aceita: ${form.consent ? "Sim" : "Não"}`,
   ];
-  return lines.join("\n");
+  return parts.join(" | ");
 }
 
 export function buildLeadWebhookPayload(
